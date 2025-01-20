@@ -16,8 +16,11 @@ import { useThemeStore } from './store/useThemeStore';
 
 const App = () => {
 
-  const {authUser, checkAuth, isCheckingAuth} = useAuthStore();
+  const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
   const { theme } = useThemeStore();
+
+  console.log({onlineUsers});
+  
   
   useEffect(() => {
     checkAuth();
@@ -36,10 +39,9 @@ const App = () => {
 
   return (
     <div data-theme = {theme}>
-      Thank you for using Minyma!
+
       <Navbar/>
       
-
       <Routes>
         <Route path = '/' element = { authUser ? <HomePage/> : <Navigate to = '/login' /> } />
         <Route path = '/signup' element = { !authUser ? <SignUpPage/> : <Navigate to = '/' /> } />

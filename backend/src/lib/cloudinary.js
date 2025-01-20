@@ -9,15 +9,4 @@ const config = {
   api_secret: process.env.CLOUDINARY_API_SECRET
 };
 
-cloudinary.config(config);
-
-// Test the connection
-try {
-  const testResult = await cloudinary.api.ping();
-  console.log('Cloudinary connection test successful:', testResult);
-} catch (error) {
-  console.error('Cloudinary connection test failed:', error);
-  throw error;
-}
-
 export default cloudinary;
