@@ -77,43 +77,45 @@ export const useAuthStore = create((set, get) => ({
     },
 
     updateProfile: async (data) => {
-    set({ isUpdatingProfile: true });
-    try {
-      const res = await axiosInstance.put("/auth/update-profile", data);
-      set({ authUser: res.data });
-      toast.success("Profile updated successfully");
-    } catch (error) {
-      console.log("error in update profile:", error);
-      toast.error(error.response.data.message);
-    } finally {
-      set({ isUpdatingProfile: false });
-    }
-  },
+        set({ isUpdatingProfile: true });
+        try {
+            console.log('Uploading image...'); // Debug log
+            const res = await axiosInstance.put("/auth/update-profile", data);
+            set({ authUser: res.data });
+            toast.success("Profile updated successfully");
+        } catch (error) {
+            console.error("Error in update profile:", error.response?.data || error);
+            toast.error(error.response?.data?.message || "Error updating profile");
+            throw error;
+        } finally {
+            set({ isUpdatingProfile: false });
+        }
+    },
 
-  connectSocket: () => {
+    connectSocket: () => {
 
-    const { authUser } = get();
-    if (!authUser || get().socket?.connected) return;
+        const { authUser } = get();
+        if (!authUser || get().socket?.connected) return;
 
-    const socket = io(BASE_URL, {
-      query: {
-        userId: authUser._id,
-      }
-    });
-    socket.connect();
+        const socket = io(BASE_URL, {
+            query: {
+                userId: authUser._id,
+            }
+        });
+        socket.connect();
 
-    set({ socket: socket });
+        set({ socket: socket });
 
-    socket.on("getOnlineUsers", (userIds) => {
-      set({ onlineUsers: userIds });
-    });
+        socket.on("getOnlineUsers", (userIds) => {
+            set({ onlineUsers: userIds });
+        });
 
-  },
+    },
 
-  disconnectSocket: () => {
-    if (get().socket?.connected) {
-      get().socket.disconnect();
-    }
-  },
+    disconnectSocket: () => {
+        if (get().socket?.connected) {
+            get().socket.disconnect();
+        }
+    },
 
 }));

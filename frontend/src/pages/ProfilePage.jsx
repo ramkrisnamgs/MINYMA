@@ -11,25 +11,37 @@ const ProfilePage = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Check file size
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      toast.error('Image size should be less than 5MB');
-      return;
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
     }
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
 
     reader.onload = async () => {
-      try {
-        const base64Image = reader.result;
-        setSelectedImg(base64Image);
-        await updateProfile({ profilePic: base64Image });
-      } catch (error) {
-        console.error('Upload error:', error);
+        try {
+            const base64Image = reader.result;
+            console.log('Image size:', base64Image.length); // Debug log
+            setSelectedImg(base64Image);
+            await updateProfile({ profilePic: base64Image });
+        } catch (error) {
+            console.error('Upload error details:', error);
+            setSelectedImg(null);
+            toast.error(error.response?.data?.message || 'Failed to upload image');
+        }
+    };
+
+    reader.onerror = () => {
+        toast.error('Error reading file');
         setSelectedImg(null);
-        toast.error('Failed to upload image');
-      }
     };
   };
 

@@ -114,27 +114,47 @@ try {
 
 
 export const updateProfile = async (req, res) => {
-  try {
-    const { profilePic } = req.body;
-    const userId = req.user._id;
+    try {
+        const { profilePic } = req.body;
+        const userId = req.user._id;
 
-    if(!profilePic) {
-      return res.status(400).json({ message: "Profile picture is required" });
+        if (!profilePic) {
+            return res.status(400).json({ message: "Profile picture is required" });
+        }
+
+        // Validate base64 image
+        if (!profilePic.startsWith('data:image')) {
+            return res.status(400).json({ message: "Invalid image format" });
+        }
+
+        try {
+            console.log('Starting Cloudinary upload...'); // Debug log
+            const uploadResponse = await cloudinary.uploader.upload(profilePic, {
+                folder: 'profile_pics',
+                resource_type: 'auto',
+            });
+
+            console.log('Upload successful:', uploadResponse.secure_url); // Debug log
+
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                { profilePic: uploadResponse.secure_url },
+                { new: true }
+            ).select("-password");
+
+            res.status(200).json(updatedUser);
+        } catch (uploadError) {
+            console.error("Cloudinary upload error:", uploadError);
+            res.status(500).json({ 
+                message: "Error uploading image",
+                details: uploadError.message 
+            });
+        }
+    } catch (error) {
+        console.error("Error in updateProfile:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
-
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
-    const updatedUser = await User.findByIdAndUpdate(
-      userId, 
-      { profilePic: uploadResponse.secure_url }, 
-      { new: true }
-    ).select("-password"); // Exclude password from response
-
-    res.status(200).json(updatedUser);
-  } catch (error) {
-    console.log("Error in updateProfile controller:", error.message);
-    res.status(500).json({ message: "Internal server error" }); 
-  }
-}
+};
 
 
 export const checkAuth = (req, res) => {
