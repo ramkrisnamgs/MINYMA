@@ -122,19 +122,24 @@ export const updateProfile = async (req, res) => {
             return res.status(400).json({ message: "Profile picture is required" });
         }
 
-        // Validate base64 image
-        if (!profilePic.startsWith('data:image')) {
-            return res.status(400).json({ message: "Invalid image format" });
-        }
-
         try {
-            console.log('Starting Cloudinary upload...'); // Debug log
+            // Detailed logging
+            console.log('Starting upload with Cloudinary config:', {
+                cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+                api_key: process.env.CLOUDINARY_API_KEY
+            });
+
             const uploadResponse = await cloudinary.uploader.upload(profilePic, {
                 folder: 'profile_pics',
                 resource_type: 'auto',
+                timeout: 120000
             });
 
-            console.log('Upload successful:', uploadResponse.secure_url); // Debug log
+            if (!uploadResponse?.secure_url) {
+                throw new Error('Failed to get upload URL');
+            }
+
+            console.log('Upload successful:', uploadResponse.secure_url);
 
             const updatedUser = await User.findByIdAndUpdate(
                 userId,
@@ -144,15 +149,18 @@ export const updateProfile = async (req, res) => {
 
             res.status(200).json(updatedUser);
         } catch (uploadError) {
-            console.error("Cloudinary upload error:", uploadError);
-            res.status(500).json({ 
+            console.error("Cloudinary upload error details:", uploadError);
+            return res.status(500).json({
                 message: "Error uploading image",
-                details: uploadError.message 
+                error: uploadError.message || 'Unknown upload error'
             });
         }
     } catch (error) {
         console.error("Error in updateProfile:", error);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ 
+            message: "Internal server error",
+            error: error.message 
+        });
     }
 };
 
